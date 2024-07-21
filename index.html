@@ -38,6 +38,49 @@
             <input id="password_confirmation" name="password_confirmation" placeholder="Nhập lại mật khẩu" type="password" class="form-control">
             <span class="form-message"></span>
           </div>
+
+          <div class="form-group">
+            <label for="avatar" class="form-label">Avatar</label>
+            <input id="avatar" name="avatar" type="file" class="form-control">
+            <span class="form-message"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="province" class="form-label">Tỉnh / Thành phố</label>
+            <select id="province" name="province" class="form-control">
+              <option value="">-- Chọn tỉnh/TP --</option>
+              <option value="hni">Hà Nội</option>
+              <option value="hcm">TP.HCM</option>
+              <option value="hpg">Hải Phòng</option>
+            </select>
+            <span class="form-message"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="gender" class="form-label">Giới tính</label>
+
+            <div class="gender-list">
+
+              <div class="gender-item">
+                <input name="gender" type="radio" value="male" class="form-control">
+                <p>Nam</p>
+              </div>
+
+              <div class="gender-item">
+                <input name="gender" type="radio" value="female" class="form-control">
+                <p>Nữ</p>
+              </div>
+
+              <div class="gender-item">
+                <input name="gender" type="radio" value="other" class="form-control">
+                <p>Khác</p>
+              </div>
+
+            </div>
+
+            <span class="form-message"></span>
+            
+          </div>
       
           <button class="form-submit">Đăng ký</button>
         </form>
@@ -49,12 +92,16 @@
         // Output
         Validator({
             form: '#form-1',
-            errorSelector: ".form-message",
+            formGroupSelector: '.form-group',
+            errorSelector: '.form-message',
             rules: [
                 Validator.isRequired('#fullname'),
                 Validator.isRequired('#email'),
                 Validator.isEmail('#email'),
                 Validator.minLength('#password', 6),
+                Validator.isRequired('input[name="gender"]'),
+                Validator.isRequired('#province'),
+                Validator.isRequired('#avatar'),
                 Validator.isRequired('#password_confirmation'),
                 Validator.isConfirmed('#password_confirmation', function() {
                     return document.querySelector("#form-1 #password").value

@@ -1,5 +1,13 @@
 // Validator object
 function Validator(options) {
+    function getParent(element, selector) {
+        while (element.parentElement) {
+            if (element.parentElement.matches(selector)) {
+                return element.parentElement
+            }
+            element = element.parentElement
+        }
+    }
 
     var selectorRules = {
 
@@ -7,8 +15,8 @@ function Validator(options) {
 
     // Validate function
     function validate(inputElement, rule) {
+        var errorElement = getParent(inputElement, options.formGroupSelector).querySelector(options.errorSelector)
         var errorMessage
-        var errorElement = inputElement.parentElement.querySelector(options.errorSelector)
         
         // Get rules from selector 
         var rules = selectorRules[rule.selector]
@@ -16,16 +24,25 @@ function Validator(options) {
         // Loop through rules & check
         // If there is error, stop the checking
         for (var i = 0; i < rules.length; ++i) {
-            var errorMessage = rules[i](inputElement.value)
+            switch (inputElement.type) {
+                case 'radio':
+                case 'checkbox':
+                    errorMessage = rules[i](
+                        formElement.querySelector(rule.selector + ':checked')
+                    )
+                    break;
+                default: 
+                    errorMessage = rules[i](inputElement.value)
+            }
             if (errorMessage) break;
         }
                     
         if (errorMessage) {
             errorElement.innerText = errorMessage
-            inputElement.parentElement.classList.add("invalid")
+            getParent(inputElement, options.formGroupSelector).classList.add("invalid")
         } else {
             errorElement.innerText = ""
-            inputElement.parentElement.classList.remove("invalid")
+            getParent(inputElement, options.formGroupSelector).classList.remove("invalid")
         }        
 
         return !errorMessage
@@ -57,7 +74,32 @@ function Validator(options) {
                     var enableInputs = formElement.querySelectorAll('[name]:not([disabled])')
 
                     var formValues = Array.from(enableInputs).reduce(function(values, input) {
-                        return (values[input.name] = input.value) && values
+                        
+                        switch(input.type) {
+                            case 'radio':
+                                values[input.name] = formElement.querySelector('input[name="' + input.name + '"]:checked').value
+                                break
+                            case 'checkbox':
+                                if (!input.matches(':checked')) {
+                                    values[input.name] = ''
+                                    return values
+                                }
+
+                                if (!Array.isArray(values[input.name])) {
+                                    values[input.name] = []
+                                }
+
+                                values[input.name].push(input.value)
+
+                                break
+                            case 'file':
+                                values[input.name] = input.files
+                                break
+                            default:
+                                values[input.name] = input.value
+                        }
+
+                        return values
                     }, {})
                     options.onSubmit(formValues)
                 }
@@ -77,9 +119,9 @@ function Validator(options) {
                 selectorRules[rule.selector] = [rule.test]
             }
 
-            var inputElement = formElement.querySelector(rule.selector)
+            var inputElements = formElement.querySelectorAll(rule.selector)
 
-            if (inputElement) {
+            Array.from(inputElements).forEach(function(inputElement) {
                 // Handle blur event
                 inputElement.onblur = function() {
                     validate(inputElement, rule)
@@ -87,11 +129,11 @@ function Validator(options) {
 
                 // Handle oninput event
                 inputElement.oninput = function() {
-                    var errorElement = inputElement.parentElement.querySelector(options.errorSelector)
+                    var errorElement = getParent(inputElement, options.formGroupSelector).querySelector(options.errorSelector)
                     errorElement.innerText = ""
-                    inputElement.parentElement.classList.remove("invalid")                    
+                    getParent(inputElement, options.formGroupSelector).classList.remove("invalid")                    
                 }
-            }
+            })
         })
     }
 }
@@ -104,7 +146,7 @@ Validator.isRequired = function(selector, message) {
     return {
         selector: selector,
         test: function(value) {
-            return value.trim() ? undefined : message || "Vui lòng nhập trường này"
+            return value ? undefined : message || "Vui lòng nhập trường này"
         }
     }
 }
